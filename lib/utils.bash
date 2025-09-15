@@ -150,6 +150,11 @@ list_all_versions() {
 validate_version() {
 	local version="$1"
 
+	# Allow "latest" as a special version
+	if [[ "$version" == "latest" ]]; then
+		return 0
+	fi
+
 	# Check basic semantic version pattern
 	if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$ ]]; then
 		return 1
@@ -324,6 +329,20 @@ download_release() {
 		fail "Invalid version format: $version"
 	fi
 
+	# Resolve "latest" to actual version number if needed
+	if [[ "$version" == "latest" ]]; then
+		debug_log "Resolving latest version in download_release..."
+		# Get the plugin directory from current script path
+		local current_script_path="${BASH_SOURCE[0]}"
+		local plugin_dir
+		plugin_dir=$(dirname "$(dirname "$current_script_path")")
+		version=$("${plugin_dir}/bin/latest-stable")
+		if [[ -z "$version" ]]; then
+			fail "Could not determine latest version"
+		fi
+		debug_log "Latest version resolved to: $version"
+	fi
+
 	os="$(get_os)"
 	arch="$(get_arch)"
 
@@ -376,6 +395,20 @@ install_version() {
 	# Validate version
 	if ! validate_version "$version"; then
 		fail "Invalid version format: $version"
+	fi
+
+	# Resolve "latest" to actual version number if needed
+	if [[ "$version" == "latest" ]]; then
+		debug_log "Resolving latest version in install_version..."
+		# Get the plugin directory from current script path
+		local current_script_path="${BASH_SOURCE[0]}"
+		local plugin_dir
+		plugin_dir=$(dirname "$(dirname "$current_script_path")")
+		version=$("${plugin_dir}/bin/latest-stable")
+		if [[ -z "$version" ]]; then
+			fail "Could not determine latest version"
+		fi
+		debug_log "Latest version resolved to: $version"
 	fi
 
 	debug_log "Installing $TOOL_NAME $version to $install_path"

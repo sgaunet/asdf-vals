@@ -122,6 +122,16 @@ main() {
 	local version="$ASDF_INSTALL_VERSION"
 	local install_path="$ASDF_INSTALL_PATH"
 
+	# Resolve "latest" to actual version number
+	if [[ "$version" == "latest" ]]; then
+		info "Resolving latest version..."
+		version=$("${plugin_dir}/bin/latest-stable")
+		if [[ -z "$version" ]]; then
+			fail "Could not determine latest version"
+		fi
+		info "Latest version resolved to: $version"
+	fi
+
 	info "Installing $TOOL_NAME $version..."
 	debug_log "Install type: $install_type"
 	debug_log "Install path: $install_path"
