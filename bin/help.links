@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+
+# Display useful links and resources
+
+cat <<EOF
+asdf-vals Plugin - Useful Links
+
+DOCUMENTATION:
+
+  Vals GitHub Repository:
+    https://github.com/helmfile/vals
+
+  Plugin Repository:
+    https://github.com/sgaunet/asdf-vals
+
+  asdf Documentation:
+    https://asdf-vm.com
+
+GETTING STARTED:
+
+  Vals README:
+    https://github.com/helmfile/vals/blob/main/README.md
+
+  Vals Usage Examples:
+    https://github.com/helmfile/vals#usage
+
+  Vals Configuration:
+    https://github.com/helmfile/vals#configuration
+
+SUPPORTED BACKENDS:
+
+  AWS SSM Parameter Store:
+    https://github.com/helmfile/vals#aws-ssm-parameter-store
+
+  AWS Secrets Manager:
+    https://github.com/helmfile/vals#aws-secrets-manager
+
+  Azure Key Vault:
+    https://github.com/helmfile/vals#azure-key-vault
+
+  GCP Secret Manager:
+    https://github.com/helmfile/vals#gcp-secret-manager
+
+  HashiCorp Vault:
+    https://github.com/helmfile/vals#hashicorp-vault
+
+  SOPS:
+    https://github.com/helmfile/vals#sops
+
+  Terraform State:
+    https://github.com/helmfile/vals#terraform-tfstate
+
+SUPPORT:
+
+  Vals Issues:
+    https://github.com/helmfile/vals/issues
+
+  Plugin Issues:
+    https://github.com/sgaunet/asdf-vals/issues
+
+  asdf Issues:
+    https://github.com/asdf-vm/asdf/issues
+
+CONTRIBUTING:
+
+  Contributing to Vals:
+    https://github.com/helmfile/vals/blob/main/CONTRIBUTING.md
+
+  Contributing to Plugin:
+    See README.md in the plugin repository
+EOF

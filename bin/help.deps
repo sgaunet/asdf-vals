@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+# Display plugin dependencies information
+
+cat <<EOF
+asdf-vals Plugin Dependencies
+
+REQUIRED DEPENDENCIES:
+
+  bash        - Bash shell (version 3.2 or higher)
+  curl        - For downloading releases from GitHub
+  tar         - For extracting downloaded archives
+  git         - For fetching version tags from GitHub
+
+OPTIONAL DEPENDENCIES:
+
+  sha256sum   - For checksum verification (Linux)
+  shasum      - For checksum verification (macOS)
+  df          - For disk space checking
+
+CHECKING DEPENDENCIES:
+
+You can verify all required dependencies are installed:
+
+  # Check bash version
+  bash --version
+
+  # Check curl
+  curl --version
+
+  # Check tar
+  tar --version
+
+  # Check git
+  git --version
+
+  # Check for checksum tools (one of these)
+  sha256sum --version 2>/dev/null || shasum --version
+
+PLATFORM SUPPORT:
+
+This plugin supports the following platforms:
+  - Linux (amd64, arm64, 386, arm, ppc64le, ppc64, s390x, riscv64)
+  - macOS (amd64, arm64)
+  - Windows (amd64, arm64, 386) - via WSL/Cygwin/MSYS2
+  - FreeBSD (amd64, arm64, 386)
+  - OpenBSD (amd64, arm64, 386)
+  - NetBSD (amd64, arm64, 386)
+
+For issues or questions:
+  https://github.com/sgaunet/asdf-vals/issues
+EOF

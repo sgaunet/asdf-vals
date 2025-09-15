@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+# Exit on error, undefined variable, or pipe failure
+set -euo pipefail
+
+# ============================================================================
+# Script Setup
+# ============================================================================
+
+# Get the directory of this script and the plugin root
+current_script_path=${BASH_SOURCE[0]}
+plugin_dir=$(dirname "$(dirname "$current_script_path")")
+
+# Source shared utility functions
+# shellcheck source=./lib/utils.bash
+source "${plugin_dir}/lib/utils.bash"
+
+# ============================================================================
+# Environment Configuration
+# ============================================================================
+
+# Set vals-specific environment variables
+# This script is called by asdf before executing the tool
+main() {
+	# Get the installation path
+	local install_path="${ASDF_INSTALL_PATH:-}"
+
+	if [[ -z "$install_path" ]]; then
+		debug_log "ASDF_INSTALL_PATH not set, exec-env running in check mode"
+		return 0
+	fi
+
+	debug_log "Setting environment for $TOOL_NAME at $install_path"
+
+	# Vals doesn't require specific environment variables like Task does
+	# Most configuration is done via command-line flags or config files
+	# This file is kept minimal as vals works well with default settings
+
+	debug_log "Vals environment configuration completed"
+}
+
+# ============================================================================
+# Script Execution
+# ============================================================================
+
+# Run main function
+main "$@"

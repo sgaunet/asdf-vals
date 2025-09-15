@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+# Exit on error, undefined variable, or pipe failure
+set -euo pipefail
+
+# ============================================================================
+# Script Setup
+# ============================================================================
+
+# Get the directory of this script and the plugin root
+current_script_path=${BASH_SOURCE[0]}
+plugin_dir=$(dirname "$(dirname "$current_script_path")")
+
+# Source shared utility functions
+# shellcheck source=./lib/utils.bash
+source "${plugin_dir}/lib/utils.bash"
+
+# ============================================================================
+# Main Logic
+# ============================================================================
+
+# List all available versions of the tool
+# Fetches versions from GitHub tags and formats them for display
+main() {
+	debug_log "Fetching all available versions of $TOOL_NAME"
+
+	# Check if we can connect to GitHub
+	if ! git ls-remote --tags --refs "$GH_REPO" >/dev/null 2>&1; then
+		fail "Unable to fetch versions from GitHub. Check your internet connection."
+	fi
+
+	# Fetch and display all versions
+	local versions
+	versions=$(list_all_versions | sort_versions)
+
+	if [[ -z "$versions" ]]; then
+		fail "No versions found for $TOOL_NAME"
+	fi
+
+	# Output versions space-separated on a single line (asdf convention)
+	echo "$versions" | xargs echo
+
+	debug_log "Successfully listed $(echo "$versions" | wc -l | xargs) versions"
+}
+
+# ============================================================================
+# Script Execution
+# ============================================================================
+
+# Run main function
+main "$@"

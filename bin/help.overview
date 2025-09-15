@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+# Display plugin overview and basic usage information
+
+cat <<EOF
+asdf-vals Plugin
+
+Vals is a tool for managing configuration values and secrets from multiple sources including AWS SSM Parameter Store, AWS Secrets Manager, AWS S3, GCP Secrets Manager, Azure Key Vault, Hashicorp Vault, SOPS, Terraform State, and more.
+
+Plugin repository: https://github.com/sgaunet/asdf-vals
+Vals repository:   https://github.com/helmfile/vals
+Vals website:      https://github.com/helmfile/vals
+
+BASIC USAGE:
+
+  Install the plugin:
+    asdf plugin add vals
+    # or
+    asdf plugin add vals https://github.com/sgaunet/asdf-vals.git
+
+  Install a version:
+    asdf install vals latest      # Install latest stable version
+    asdf install vals 0.42.1      # Install specific version
+
+  Set a version:
+    asdf global vals latest       # Set globally
+    asdf local vals 0.42.1        # Set for current directory
+
+  List versions:
+    asdf list vals                # List installed versions
+    asdf list-all vals            # List all available versions
+
+ENVIRONMENT VARIABLES:
+
+  ASDF_VALS_DEBUG=1               Enable debug output
+  ASDF_VALS_MAX_RETRIES=3         Max retry attempts for network operations
+  ASDF_VALS_RETRY_DELAY=2         Delay in seconds between retries
+  GITHUB_API_TOKEN=<token>        GitHub token for higher API rate limits
+
+TROUBLESHOOTING:
+
+  Enable debug mode:
+    export ASDF_VALS_DEBUG=1
+    asdf install vals latest
+
+  If you encounter rate limiting:
+    export GITHUB_API_TOKEN=your_github_token
+    asdf install vals latest
+
+For more help, see:
+  https://github.com/sgaunet/asdf-vals
+  https://asdf-vm.com
+EOF
