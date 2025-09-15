@@ -55,10 +55,10 @@ main() {
 
 	# Extract the archive
 	info "Extracting $TOOL_NAME binary..."
-	if ! tar -xzf "$release_file" -C "$download_path" "$TOOL_NAME" 2>/dev/null; then
+	if ! tar -xzf "$release_file" -C "$download_path" "$TOOL_NAME"; then
 		# Some versions might have different archive structure, try without specific file
 		debug_log "Standard extraction failed, trying alternative extraction"
-		if ! tar -xzf "$release_file" -C "$download_path" 2>/dev/null; then
+		if ! tar -xzf "$release_file" -C "$download_path"; then
 			fail "Could not extract $release_file. The archive may be corrupted or have an unexpected structure."
 		fi
 	fi

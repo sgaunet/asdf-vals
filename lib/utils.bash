@@ -248,7 +248,7 @@ get_arch() {
 #   Checksum filename
 get_checksum_filename() {
 	local version="$1"
-	echo "checksums.txt"
+	echo "vals_${version}_checksums.txt"
 }
 
 # Download and verify checksum for a release
@@ -260,7 +260,7 @@ get_checksum_filename() {
 verify_checksum() {
 	local version="$1"
 	local file_path="$2"
-	local checksum_url="$GH_REPO/releases/download/v${version}/checksums.txt"
+	local checksum_url="$GH_REPO/releases/download/v${version}/vals_${version}_checksums.txt"
 	local checksum_file="${file_path}.checksums"
 	local filename
 	filename="$(basename "$file_path")"
