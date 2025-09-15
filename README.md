@@ -1,8 +1,6 @@
 # asdf-vals
 
 [![Build](https://github.com/sgaunet/asdf-vals/actions/workflows/build.yml/badge.svg)](https://github.com/sgaunet/asdf-vals/actions/workflows/build.yml)
-[![Lint](https://github.com/sgaunet/asdf-vals/actions/workflows/lint.yml/badge.svg)](https://github.com/sgaunet/asdf-vals/actions/workflows/lint.yml)
-
 [Vals](https://github.com/helmfile/vals) plugin for the [asdf version manager](https://asdf-vm.com).
 
 Vals is a tool for managing configuration values and secrets from multiple sources including AWS SSM Parameter Store, AWS Secrets Manager, AWS S3, GCP Secrets Manager, Azure Key Vault, Hashicorp Vault, SOPS, Terraform State, and more.
