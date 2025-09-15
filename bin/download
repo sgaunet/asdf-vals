@@ -37,6 +37,16 @@ main() {
 	local download_path="$ASDF_DOWNLOAD_PATH"
 	local os arch release_file
 
+	# Resolve "latest" to actual version number
+	if [[ "$version" == "latest" ]]; then
+		info "Resolving latest version..."
+		version=$("${plugin_dir}/bin/latest-stable")
+		if [[ -z "$version" ]]; then
+			fail "Could not determine latest version"
+		fi
+		info "Latest version resolved to: $version"
+	fi
+
 	info "Preparing to download $TOOL_NAME version $version"
 
 	# Create download directory
