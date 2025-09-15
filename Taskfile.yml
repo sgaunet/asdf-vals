@@ -1,0 +1,20 @@
+version: '3'
+
+tasks:
+  default:
+    desc: List all available tasks
+    cmds:
+      - task -a
+    silent: true
+
+  test:
+    desc: Run asdf plugin tests
+    cmds:
+      - asdf plugin test vals . "vals version"
+
+  format:
+    desc: Format bash scripts with shfmt
+    cmds:
+      - |
+        shfmt --language-dialect bash --write \
+          ./**/*

@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+
+# Exit on error, undefined variable, or pipe failure
+set -euo pipefail
+
+# ============================================================================
+# Script Setup
+# ============================================================================
+
+# Get the directory of this script and the plugin root
+current_script_path=${BASH_SOURCE[0]}
+plugin_dir=$(dirname "$(dirname "$current_script_path")")
+
+# Source shared utility functions
+# shellcheck source=./lib/utils.bash
+source "${plugin_dir}/lib/utils.bash"
+
+# ============================================================================
+# Latest Stable Version Detection
+# ============================================================================
+
+# Fetch the latest stable version using GitHub API
+# Returns: Latest stable version string to stdout
+get_latest_stable_from_api() {
+	local api_url="https://api.github.com/repos/helmfile/vals/releases/latest"
+
+	debug_log "Fetching latest release from GitHub API"
+
+	# Build curl options with proper headers
+	build_curl_opts
+
+	# Make API request
+	local response
+	if response=$(curl_with_retry "${curl_opts[@]}" "$api_url" 2>/dev/null); then
+		# Extract tag_name from JSON response
+		local version
+		version=$(echo "$response" | grep '"tag_name"' | sed -E 's/.*"tag_name": *"v?([^"]+)".*/\1/')
+
+		if [[ -n "$version" ]]; then
+			debug_log "Latest stable version from API: $version"
+			echo "$version"
+			return 0
+		fi
+	fi
+
+	debug_log "Failed to get version from API"
+	return 1
+}
+
+# Fetch the latest stable version using redirect detection
+# Returns: Latest stable version string to stdout
+get_latest_stable_from_redirect() {
+	local releases_url="$GH_REPO/releases/latest"
+
+	debug_log "Fetching latest release using redirect method"
+
+	# Build curl options for header inspection
+	local curl_opts=(-sI)
+
+	if [[ -n "${GITHUB_API_TOKEN:-}" ]]; then
+		curl_opts+=(-H "Authorization: token $GITHUB_API_TOKEN")
+	fi
+
+	# Get redirect location
+	local redirect_url
+	redirect_url=$(curl_with_retry "${curl_opts[@]}" "$releases_url" 2>/dev/null |
+		grep -i "^location:" |
+		sed -E 's/^location: *//i' |
+		tr -d '\r')
+
+	if [[ -n "$redirect_url" ]]; then
+		debug_log "Redirect URL: $redirect_url"
+
+		# Check if there are any releases
+		if [[ "$redirect_url" == "$GH_REPO/releases" ]]; then
+			debug_log "No releases found (redirected to releases page)"
+			return 1
+		fi
+
+		# Extract version from redirect URL
+		local version
+		version=$(echo "$redirect_url" | sed 's|.*/tag/v\{0,1\}||')
+
+		if [[ -n "$version" ]]; then
+			debug_log "Latest stable version from redirect: $version"
+			echo "$version"
+			return 0
+		fi
+	fi
+
+	debug_log "Failed to get version from redirect"
+	return 1
+}
+
+# Fetch the latest stable version from the full list
+# Returns: Latest stable version string to stdout
+get_latest_stable_from_list() {
+	debug_log "Fetching latest stable version from full list"
+
+	# Get all versions and filter for stable releases
+	local latest_stable
+	latest_stable=$(list_all_versions |
+		grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' |
+		sort_versions |
+		tail -n1)
+
+	if [[ -n "$latest_stable" ]]; then
+		debug_log "Latest stable version from list: $latest_stable"
+		echo "$latest_stable"
+		return 0
+	fi
+
+	debug_log "No stable versions found in list"
+	return 1
+}
+
+# ============================================================================
+# Main Logic
+# ============================================================================
+
+main() {
+	local version=""
+
+	# Try GitHub API first (most reliable and fastest)
+	if version=$(get_latest_stable_from_api); then
+		echo "$version"
+		exit 0
+	fi
+
+	# Fallback to redirect method
+	if version=$(get_latest_stable_from_redirect); then
+		echo "$version"
+		exit 0
+	fi
+
+	# Final fallback to listing all versions
+	if version=$(get_latest_stable_from_list); then
+		echo "$version"
+		exit 0
+	fi
+
+	# If all methods fail
+	fail "Could not determine the latest stable version. Please check your internet connection and GitHub access."
+}
+
+# ============================================================================
+# Script Execution
+# ============================================================================
+
+# Run main function
+main "$@"

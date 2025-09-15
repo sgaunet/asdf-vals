@@ -1,0 +1,18 @@
+---
+name: Plugin Test
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  plugin_test:
+    name: asdf plugin test
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: asdf-vm/actions/plugin-test@v1
+        with:
+          command: vals version

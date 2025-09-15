@@ -1,0 +1,181 @@
+#!/usr/bin/env bash
+
+# Exit on error, undefined variable, or pipe failure
+set -euo pipefail
+
+# ============================================================================
+# Script Setup
+# ============================================================================
+
+# Get the directory of this script and the plugin root
+current_script_path=${BASH_SOURCE[0]}
+plugin_dir=$(dirname "$(dirname "$current_script_path")")
+
+# Source shared utility functions
+# shellcheck source=./lib/utils.bash
+source "${plugin_dir}/lib/utils.bash"
+
+# ============================================================================
+# Environment Validation
+# ============================================================================
+
+# Validate required environment variables from asdf
+if [[ -z "${ASDF_INSTALL_TYPE:-}" ]]; then
+	fail "ASDF_INSTALL_TYPE is not set. This script must be run by asdf."
+fi
+
+if [[ -z "${ASDF_INSTALL_VERSION:-}" ]]; then
+	fail "ASDF_INSTALL_VERSION is not set. This script must be run by asdf."
+fi
+
+if [[ -z "${ASDF_INSTALL_PATH:-}" ]]; then
+	fail "ASDF_INSTALL_PATH is not set. This script must be run by asdf."
+fi
+
+# Optional environment variables
+readonly DOWNLOAD_PATH="${ASDF_DOWNLOAD_PATH:-}"
+readonly CONCURRENCY="${ASDF_CONCURRENCY:-1}"
+
+# ============================================================================
+# Pre-Installation Checks
+# ============================================================================
+
+# Perform pre-installation system checks
+# Returns: 0 if all checks pass, exits on failure
+pre_install_checks() {
+	local install_path="$1"
+
+	# Check if installation directory is writable
+	local parent_dir
+	parent_dir=$(dirname "$install_path")
+
+	if [[ ! -w "$parent_dir" ]]; then
+		fail "Installation directory is not writable: $parent_dir"
+	fi
+
+	# Check available disk space (require at least 100MB)
+	if command -v df >/dev/null 2>&1; then
+		local available_space
+		available_space=$(df "$parent_dir" | awk 'NR==2 {print $4}')
+
+		# Convert to MB (df output is usually in KB)
+		if [[ -n "$available_space" ]] && [[ "$available_space" -lt 102400 ]]; then
+			warn "Low disk space available. Installation may fail."
+		fi
+	fi
+
+	debug_log "Pre-installation checks passed"
+}
+
+# ============================================================================
+# Post-Installation Validation
+# ============================================================================
+
+# Validate the installation after completion
+# Arguments:
+#   $1 - Installation path
+#   $2 - Version
+# Returns: 0 if validation passes, 1 on failure
+post_install_validation() {
+	local install_path="$1"
+	local version="$2"
+	local tool_binary="$install_path/$TOOL_NAME"
+
+	info "Validating installation..."
+
+	# Check binary exists
+	if [[ ! -f "$tool_binary" ]]; then
+		return 1
+	fi
+
+	# Check binary is executable
+	if [[ ! -x "$tool_binary" ]]; then
+		return 1
+	fi
+
+	# Verify version matches
+	local installed_version
+	if installed_version=$("$tool_binary" version 2>&1); then
+		debug_log "Installed version output: $installed_version"
+
+		# Extract version number from output
+		if echo "$installed_version" | grep -q "$version"; then
+			info "Version validation successful"
+			return 0
+		else
+			warn "Version mismatch. Expected $version but got: $installed_version"
+			# Don't fail on version mismatch as format might differ
+		fi
+	else
+		warn "Could not verify installed version"
+	fi
+
+	return 0
+}
+
+# ============================================================================
+# Main Installation Logic
+# ============================================================================
+
+main() {
+	local install_type="$ASDF_INSTALL_TYPE"
+	local version="$ASDF_INSTALL_VERSION"
+	local install_path="$ASDF_INSTALL_PATH"
+
+	info "Installing $TOOL_NAME $version..."
+	debug_log "Install type: $install_type"
+	debug_log "Install path: $install_path"
+	debug_log "Download path: ${DOWNLOAD_PATH:-<not set>}"
+	debug_log "Concurrency: $CONCURRENCY"
+
+	# Perform pre-installation checks
+	pre_install_checks "$install_path"
+
+	# Check if download was performed separately
+	if [[ -n "$DOWNLOAD_PATH" ]] && [[ -d "$DOWNLOAD_PATH" ]]; then
+		debug_log "Using pre-downloaded files from: $DOWNLOAD_PATH"
+
+		# Set ASDF_DOWNLOAD_PATH for install_version function
+		export ASDF_DOWNLOAD_PATH="$DOWNLOAD_PATH"
+	else
+		warn "No pre-downloaded files found. Installation may fail."
+		warn "Ensure 'asdf install' is run, not just the install script directly."
+	fi
+
+	# Perform the installation
+	install_version "$install_type" "$version" "$install_path"
+
+	# Post-installation validation
+	if ! post_install_validation "$install_path/bin" "$version"; then
+		fail "Post-installation validation failed"
+	fi
+
+	# Create additional convenience symlinks if needed
+	create_convenience_symlinks "$install_path/bin"
+
+	info "Installation completed successfully!"
+	info "You can now use: asdf global $TOOL_NAME $version"
+}
+
+# ============================================================================
+# Helper Functions
+# ============================================================================
+
+# Create convenience symlinks for common command variations
+# Arguments:
+#   $1 - Binary directory path
+create_convenience_symlinks() {
+	local bin_dir="$1"
+
+	# Currently vals doesn't need additional symlinks
+	# This function is here for future extensibility
+
+	debug_log "No additional symlinks needed for $TOOL_NAME"
+}
+
+# ============================================================================
+# Script Execution
+# ============================================================================
+
+# Run main function
+main "$@"

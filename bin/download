@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+
+# Exit on error, undefined variable, or pipe failure
+set -euo pipefail
+
+# ============================================================================
+# Script Setup
+# ============================================================================
+
+# Get the directory of this script and the plugin root
+current_script_path=${BASH_SOURCE[0]}
+plugin_dir=$(dirname "$(dirname "$current_script_path")")
+
+# Source shared utility functions
+# shellcheck source=./lib/utils.bash
+source "${plugin_dir}/lib/utils.bash"
+
+# ============================================================================
+# Environment Validation
+# ============================================================================
+
+# Validate required environment variables from asdf
+if [[ -z "${ASDF_DOWNLOAD_PATH:-}" ]]; then
+	fail "ASDF_DOWNLOAD_PATH is not set. This script must be run by asdf."
+fi
+
+if [[ -z "${ASDF_INSTALL_VERSION:-}" ]]; then
+	fail "ASDF_INSTALL_VERSION is not set. This script must be run by asdf."
+fi
+
+# ============================================================================
+# Main Download Logic
+# ============================================================================
+
+main() {
+	local version="$ASDF_INSTALL_VERSION"
+	local download_path="$ASDF_DOWNLOAD_PATH"
+	local os arch release_file
+
+	info "Preparing to download $TOOL_NAME version $version"
+
+	# Create download directory
+	debug_log "Creating download directory: $download_path"
+	mkdir -p "$download_path"
+
+	# Determine platform-specific filename
+	os="$(get_os)"
+	arch="$(get_arch)"
+	release_file="$download_path/${TOOL_NAME}_${version}_${os}_${arch}.tar.gz"
+
+	debug_log "Target file: $release_file"
+
+	# Download the release archive
+	download_release "$version" "$release_file"
+
+	# Extract the archive
+	info "Extracting $TOOL_NAME binary..."
+	if ! tar -xzf "$release_file" -C "$download_path" "$TOOL_NAME"; then
+		# Some versions might have different archive structure, try without specific file
+		debug_log "Standard extraction failed, trying alternative extraction"
+		if ! tar -xzf "$release_file" -C "$download_path"; then
+			fail "Could not extract $release_file. The archive may be corrupted or have an unexpected structure."
+		fi
+	fi
+
+	# Verify the binary was extracted
+	if [[ ! -f "$download_path/$TOOL_NAME" ]]; then
+		# Check if it's in a subdirectory
+		local found_binary
+		found_binary=$(find "$download_path" -name "$TOOL_NAME" -type f | head -1)
+
+		if [[ -n "$found_binary" ]]; then
+			debug_log "Found binary at: $found_binary"
+			mv "$found_binary" "$download_path/$TOOL_NAME"
+		else
+			fail "Could not find $TOOL_NAME binary after extraction"
+		fi
+	fi
+
+	# Set execute permissions
+	chmod +x "$download_path/$TOOL_NAME"
+
+	# Clean up the archive file to save space
+	debug_log "Removing archive file: $release_file"
+	rm -f "$release_file"
+
+	# Verify the download
+	if [[ -f "$download_path/$TOOL_NAME" ]] && [[ -x "$download_path/$TOOL_NAME" ]]; then
+		info "Download and extraction completed successfully"
+
+		# Show version info if in debug mode
+		if [[ "$DEBUG" == "1" ]]; then
+			debug_log "Downloaded binary version:"
+			"$download_path/$TOOL_NAME" version 2>&1 | head -1 >&2 || true
+		fi
+	else
+		fail "Download verification failed. Binary not found or not executable."
+	fi
+}
+
+# ============================================================================
+# Script Execution
+# ============================================================================
+
+# Run main function
+main "$@"
